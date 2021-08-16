@@ -1,3 +1,9 @@
+# Our additional directives
+#
+*.deb
+
+# Original stuff from XFCE upstream
+#
 test-driver
 Makefile
 Makefile.in
