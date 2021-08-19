@@ -834,6 +834,10 @@ panel_base_window_set_borders (PanelBaseWindow *window,
       if (window->background_style == PANEL_BG_STYLE_NONE)
         panel_base_window_reset_background_css (window);
     }
+
+  // ROZNIAK: Hack to remove borders
+  //
+  priv->borders = PANEL_BORDER_NONE;
 }
 
 
@@ -850,5 +854,7 @@ panel_base_window_get_borders (PanelBaseWindow *window)
     return PANEL_BORDER_TOP | PANEL_BORDER_BOTTOM
            | PANEL_BORDER_LEFT | PANEL_BORDER_RIGHT;
 
-  return priv->borders;
+  // ROZNIAK: Hack to remove borders
+  //
+  return PANEL_BORDER_NONE;
 }
