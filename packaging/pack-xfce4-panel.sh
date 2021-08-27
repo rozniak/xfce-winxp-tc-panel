@@ -19,6 +19,11 @@ make -j6 datarootdir=/usr/share datadir=/usr/share libdir=/usr/lib/x86_64-linux-
 #
 # BUILD DIR STRUCTURE
 #
+if [[ -d "${PKG_DIR}" ]]
+then
+    rm -rf "${PKG_DIR}"
+fi
+
 mkdir "${PKG_DIR}"
 
 # XDG stuff
@@ -93,7 +98,7 @@ find "${REPO_ROOT}/plugins" -type f -iname "*.desktop" -exec cp '{}' "${PKG_PLUG
 PKG_DEBIAN_DIR="${PKG_DIR}/DEBIAN"
 
 mkdir -p "${PKG_DEBIAN_DIR}"
-cp "${SCRIPTDIR}/control" "${PKG_DEBIAN_DIR}"
+cp "${SCRIPTDIR}/control-xfce4-panel" "${PKG_DEBIAN_DIR}/control"
 
 #
 # PACKAGE NOW
