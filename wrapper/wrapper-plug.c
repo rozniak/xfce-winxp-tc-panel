@@ -72,7 +72,7 @@ wrapper_plug_class_init (WrapperPlugClass *klass)
   gobject_class->finalize = wrapper_plug_finalize;
 
   gtkwidget_class = GTK_WIDGET_CLASS (klass);
-  gtkwidget_class->draw = wrapper_plug_draw;
+//  gtkwidget_class->draw = wrapper_plug_draw;
 }
 
 
@@ -91,7 +91,7 @@ wrapper_plug_init (WrapperPlug *plug)
   gtk_widget_set_name (GTK_WIDGET (plug), "XfcePanelWindowWrapper");
 
   /* allow painting, else compositing won't work */
-  gtk_widget_set_app_paintable (GTK_WIDGET (plug), TRUE);
+//  gtk_widget_set_app_paintable (GTK_WIDGET (plug), TRUE);
 
   /* set the colormap */
   screen = gtk_window_get_screen (GTK_WINDOW (plug));
@@ -129,6 +129,7 @@ wrapper_plug_draw (GtkWidget *widget,
   GdkRGBA         *rgba;
   GdkPixbuf       *pixbuf;
   GError          *error = NULL;
+  cairo_pattern_t *style_bg;
 
   cairo_save (cr);
 
@@ -183,19 +184,53 @@ wrapper_plug_draw (GtkWidget *widget,
           color = plug->background_rgba;
           cairo_set_source_rgba (cr, color->red, color->green,
                                  color->blue, color->alpha);
+
+          /* draw the background color */
+          cairo_paint (cr);
         }
       else
         {
+            g_message("Drawing CSS");
+          /** draw background based on CSS */
           context = gtk_widget_get_style_context (widget);
+
+          /** background colour is the fallback */
           gtk_style_context_get (context, GTK_STATE_FLAG_NORMAL,
                                  GTK_STYLE_PROPERTY_BACKGROUND_COLOR,
                                  &rgba, NULL);
           gdk_cairo_set_source_rgba (cr, rgba);
+
+          cairo_paint (cr);
+
+          /** see if there's a background image assigned */
+          gtk_style_context_get (context, GTK_STATE_FLAG_NORMAL,
+                                 GTK_STYLE_PROPERTY_BACKGROUND_IMAGE,
+                                 &style_bg, NULL);
+
+          if (style_bg)
+          {
+      //        cairo_pattern_set_extend(style_bg, CAIRO_EXTEND_REPEAT);
+              cairo_set_source(cr, style_bg);
+
+              cairo_surface_t* image_surface = NULL;
+
+              cairo_pattern_get_surface(style_bg, &image_surface);
+
+              g_message("widget width: %d , widget height: %d", gtk_widget_get_allocated_width(GTK_WIDGET(plug)), gtk_widget_get_allocated_height(GTK_WIDGET(plug)));
+              g_message("bg width: %d , bg height: %d", cairo_image_surface_get_width(image_surface), cairo_image_surface_get_height(image_surface));
+
+              cairo_paint(cr);
+          }
+
           gdk_rgba_free (rgba);
         }
 
-      /* draw the background color */
-      cairo_paint (cr);
+
+      if (style_bg != NULL)
+      {
+          cairo_pattern_destroy(style_bg);
+          style_bg = NULL;
+      }
     }
 
   cairo_restore(cr);
