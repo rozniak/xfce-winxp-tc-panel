@@ -1,9 +1,9 @@
 pkgname=xfce-winxp-tc-panel
 pkgver=4.16.3
 pkgrel=2
-pkgdesc="Panel for the Xfce desktop environment"
+pkgdesc="Panel for the Xfce desktop environment - modified for use with Windows XP Total Conversion for XFCE"
 arch=('x86_64')
-url="https://docs.xfce.org/xfce/xfce4-panel/start"
+url="https://github.com/rozniak/xfce-winxp-tc-panel/"
 license=('GPL2')
 groups=('xfce4')
 conflicts=('xfce4-panel')
