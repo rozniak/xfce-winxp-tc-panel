@@ -1,0 +1,35 @@
+pkgname=xfce-winxp-tc-panel
+pkgver=4.16.3
+pkgrel=2
+pkgdesc="Panel for the Xfce desktop environment"
+arch=('x86_64')
+url="https://docs.xfce.org/xfce/xfce4-panel/start"
+license=('GPL2')
+groups=('xfce4')
+conflicts=('xfce4-panel')
+provides=('xfce4-panel')
+depends=('exo' 'garcon' 'libxfce4ui' 'xfconf' 'libwnck3' 'libdbusmenu-gtk3'
+         'hicolor-icon-theme' 'desktop-file-utils')
+makedepends=('intltool' 'gobject-introspection' 'vala' 'git')
+source=("$pkgname::git+file://$(pwd)/..")
+sha256sums=('SKIP')
+
+build() {
+  cd "$srcdir/$pkgname"
+
+  ./autogen.sh \
+    --prefix=/usr \
+    --sysconfdir=/etc \
+    --libexecdir=/usr/lib \
+    --localstatedir=/var \
+    --disable-static \
+    --enable-gio-unix \
+    --disable-debug
+  make
+}
+
+package() {
+  cd "$srcdir/$pkgname"
+  make DESTDIR="$pkgdir" install
+}
+
