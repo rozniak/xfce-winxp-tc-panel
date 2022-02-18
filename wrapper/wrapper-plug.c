@@ -24,14 +24,13 @@
 #include <string.h>
 #endif
 
+#include <glib/gprintf.h>
 #include <wrapper/wrapper-plug.h>
 #include <common/panel-private.h>
 
 
 
 static void     wrapper_plug_finalize         (GObject        *object);
-static gboolean wrapper_plug_draw             (GtkWidget      *widget,
-                                               cairo_t        *cr);
 static void     wrapper_plug_background_reset (WrapperPlug    *plug);
 
 
@@ -45,10 +44,9 @@ struct _WrapperPlug
 {
   GtkPlug __parent__;
 
-  /* background information */
-  GdkRGBA         *background_rgba;
-  gchar           *background_image;
-  cairo_pattern_t *background_image_cache;
+  /* stored styles */
+  GtkStyleContext  *style_context;
+  GtkStyleProvider *style_provider;
 };
 
 
@@ -66,13 +64,9 @@ static void
 wrapper_plug_class_init (WrapperPlugClass *klass)
 {
   GObjectClass   *gobject_class;
-  GtkWidgetClass *gtkwidget_class;
 
   gobject_class = G_OBJECT_CLASS (klass);
   gobject_class->finalize = wrapper_plug_finalize;
-
-  gtkwidget_class = GTK_WIDGET_CLASS (klass);
-//  gtkwidget_class->draw = wrapper_plug_draw;
 }
 
 
@@ -82,16 +76,11 @@ wrapper_plug_init (WrapperPlug *plug)
 {
   GdkVisual       *visual = NULL;
   GdkScreen       *screen;
-  GtkStyleContext *context;
 
-  plug->background_rgba = NULL;
-  plug->background_image = NULL;
-  plug->background_image_cache = NULL;
+  plug->style_context = gtk_widget_get_style_context (GTK_WIDGET (plug));
+  plug->style_provider = NULL;
 
   gtk_widget_set_name (GTK_WIDGET (plug), "XfcePanelWindowWrapper");
-
-  /* allow painting, else compositing won't work */
-//  gtk_widget_set_app_paintable (GTK_WIDGET (plug), TRUE);
 
   /* set the colormap */
   screen = gtk_window_get_screen (GTK_WINDOW (plug));
@@ -100,9 +89,8 @@ wrapper_plug_init (WrapperPlug *plug)
     gtk_widget_set_visual (GTK_WIDGET (plug), visual);
 
   /* set the panel class */
-  context = gtk_widget_get_style_context (GTK_WIDGET (plug));
-  gtk_style_context_add_class (context, "panel");
-  gtk_style_context_add_class (context, "xfce4-panel");
+  gtk_style_context_add_class (plug->style_context, "panel");
+  gtk_style_context_add_class (plug->style_context, "xfce4-panel");
 
   gtk_drag_dest_unset (GTK_WIDGET (plug));
 }
@@ -119,142 +107,14 @@ wrapper_plug_finalize (GObject *object)
 
 
 
-static gboolean
-wrapper_plug_draw (GtkWidget *widget,
-                   cairo_t   *cr)
-{
-  WrapperPlug     *plug = WRAPPER_PLUG (widget);
-  GtkStyleContext *context;
-  const GdkRGBA   *color;
-  GdkRGBA         *rgba;
-  GdkPixbuf       *pixbuf;
-  GError          *error = NULL;
-  cairo_pattern_t *style_bg;
-
-  cairo_save (cr);
-
-  /* The "draw" signal is in widget coordinates, transform back to window */
-  gtk_cairo_transform_to_window (cr,
-                                 GTK_WIDGET (plug),
-                                 gtk_widget_get_window (gtk_widget_get_toplevel (GTK_WIDGET (plug))));
-
-  if (G_UNLIKELY (plug->background_image != NULL))
-    {
-      cairo_set_operator (cr, CAIRO_OPERATOR_SOURCE);
-
-      if (G_LIKELY (plug->background_image_cache != NULL))
-        {
-          cairo_set_source (cr, plug->background_image_cache);
-          cairo_paint (cr);
-        }
-      else
-        {
-          /* load the image in a pixbuf */
-          pixbuf = gdk_pixbuf_new_from_file (plug->background_image, &error);
-
-          if (G_LIKELY (pixbuf != NULL))
-            {
-              gdk_cairo_set_source_pixbuf (cr, pixbuf, 0, 0);
-              g_object_unref (G_OBJECT (pixbuf));
-
-              plug->background_image_cache = cairo_get_source (cr);
-              cairo_pattern_reference (plug->background_image_cache);
-              cairo_pattern_set_extend (plug->background_image_cache, CAIRO_EXTEND_REPEAT);
-              cairo_paint (cr);
-            }
-          else
-            {
-              /* print error message */
-              g_warning ("Background image disabled, \"%s\" could not be loaded: %s",
-                         plug->background_image, error != NULL ? error->message : "No error");
-              g_error_free (error);
-
-              /* disable background image */
-              wrapper_plug_background_reset (plug);
-            }
-        }
-    }
-  else
-    {
-      cairo_set_operator (cr, CAIRO_OPERATOR_SOURCE);
-
-      /* get the background gdk rgba */
-      if (plug->background_rgba != NULL)
-        {
-          color = plug->background_rgba;
-          cairo_set_source_rgba (cr, color->red, color->green,
-                                 color->blue, color->alpha);
-
-          /* draw the background color */
-          cairo_paint (cr);
-        }
-      else
-        {
-            g_message("Drawing CSS");
-          /** draw background based on CSS */
-          context = gtk_widget_get_style_context (widget);
-
-          /** background colour is the fallback */
-          gtk_style_context_get (context, GTK_STATE_FLAG_NORMAL,
-                                 GTK_STYLE_PROPERTY_BACKGROUND_COLOR,
-                                 &rgba, NULL);
-          gdk_cairo_set_source_rgba (cr, rgba);
-
-          cairo_paint (cr);
-
-          /** see if there's a background image assigned */
-          gtk_style_context_get (context, GTK_STATE_FLAG_NORMAL,
-                                 GTK_STYLE_PROPERTY_BACKGROUND_IMAGE,
-                                 &style_bg, NULL);
-
-          if (style_bg)
-          {
-      //        cairo_pattern_set_extend(style_bg, CAIRO_EXTEND_REPEAT);
-              cairo_set_source(cr, style_bg);
-
-              cairo_surface_t* image_surface = NULL;
-
-              cairo_pattern_get_surface(style_bg, &image_surface);
-
-              g_message("widget width: %d , widget height: %d", gtk_widget_get_allocated_width(GTK_WIDGET(plug)), gtk_widget_get_allocated_height(GTK_WIDGET(plug)));
-              g_message("bg width: %d , bg height: %d", cairo_image_surface_get_width(image_surface), cairo_image_surface_get_height(image_surface));
-
-              cairo_paint(cr);
-          }
-
-          gdk_rgba_free (rgba);
-        }
-
-
-      if (style_bg != NULL)
-      {
-          cairo_pattern_destroy(style_bg);
-          style_bg = NULL;
-      }
-    }
-
-  cairo_restore(cr);
-
-  return GTK_WIDGET_CLASS (wrapper_plug_parent_class)->draw (widget, cr);
-}
-
-
-
 static void
 wrapper_plug_background_reset (WrapperPlug *plug)
 {
   panel_return_if_fail (WRAPPER_IS_PLUG (plug));
 
-  if (plug->background_rgba != NULL)
-    gdk_rgba_free (plug->background_rgba);
-  plug->background_rgba = NULL;
-
-  if (plug->background_image_cache != NULL)
-    cairo_pattern_destroy (plug->background_image_cache);
-  plug->background_image_cache = NULL;
-
-  g_free (plug->background_image);
-  plug->background_image = NULL;
+  if (plug->style_provider != NULL)
+      gtk_style_context_remove_provider(plug->style_context, plug->style_provider);
+  plug->style_provider = NULL;
 }
 
 
@@ -292,17 +152,40 @@ void
 wrapper_plug_set_background_color (WrapperPlug *plug,
                                    const gchar *color_string)
 {
-  GdkRGBA                 color;
+  GdkRGBA color;
+  gchar*  css;
 
   panel_return_if_fail (WRAPPER_IS_PLUG (plug));
 
   wrapper_plug_background_reset (plug);
 
-  if (color_string != NULL
-      && gdk_rgba_parse (&color, color_string))
-    plug->background_rgba = gdk_rgba_copy (&color);
+  if (color_string != NULL && gdk_rgba_parse (&color, color_string))
+  {
+      css = g_slice_alloc0 (255);
 
-  gtk_widget_queue_draw (GTK_WIDGET (plug));
+      g_sprintf(
+          css,
+          "* { background: %s; }",
+          gdk_rgba_to_string(&color)
+      );
+
+      plug->style_provider = GTK_STYLE_PROVIDER (gtk_css_provider_new());
+
+      gtk_css_provider_load_from_data(
+          GTK_CSS_PROVIDER (plug->style_provider),
+          css,
+          -1,
+          NULL
+      );
+
+      gtk_style_context_add_provider(
+          plug->style_context,
+          plug->style_provider,
+          GTK_STYLE_PROVIDER_PRIORITY_APPLICATION
+      );
+
+      g_slice_free1 (255, css);
+  }
 }
 
 
@@ -311,11 +194,34 @@ void
 wrapper_plug_set_background_image (WrapperPlug *plug,
                                    const gchar *image)
 {
+  gchar* css;
+
   panel_return_if_fail (WRAPPER_IS_PLUG (plug));
 
   wrapper_plug_background_reset (plug);
 
-  plug->background_image = g_strdup (image);
+  css = g_slice_alloc0 (255);
 
-  gtk_widget_queue_draw (GTK_WIDGET (plug));
+  g_sprintf(
+      css,
+      "* { background: url('%s'); }",
+      image
+  );
+
+  plug->style_provider = GTK_STYLE_PROVIDER (gtk_css_provider_new());
+
+  gtk_css_provider_load_from_data(
+      GTK_CSS_PROVIDER (plug->style_provider),
+      css,
+      -1,
+      NULL
+  );
+
+  gtk_style_context_add_provider(
+      plug->style_context,
+      plug->style_provider,
+      GTK_STYLE_PROVIDER_PRIORITY_APPLICATION
+  );
+
+  g_slice_free1 (255, css);
 }
