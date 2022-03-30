@@ -4,7 +4,7 @@ Version: 4.16.2-1
 Architecture: amd64
 Maintainer: Debian Xfce Maintainers <debian-xfce@lists.debian.org>
 Installed-Size: 434
-Depends: libc6 (>= 2.4), libcairo2 (>= 1.2.4), libgdk-pixbuf-2.0-0 (>= 2.22.0), libglib2.0-0 (>= 2.37.3), libgtk-3-0 (>= 3.21.5), libxfce4util7 (>= 4.15.6)
+Depends: libc6 (>= 2.4), libcairo2 (>= 1.2.4), libgdk-pixbuf-2.0-0 (>= 2.22.0) | libgdk-pixbuf2.0-0, libglib2.0-0 (>= 2.37.3), libgtk-3-0 (>= 3.21.5), libxfce4util7 (>= 4.15.6)
 Section: libs
 Priority: optional
 Homepage: https://docs.xfce.org/xfce/xfce4-panel/start
