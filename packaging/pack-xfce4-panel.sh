@@ -14,7 +14,20 @@ REPO_ROOT=`realpath -s "${SCRIPTDIR}/.."`
 cd "${REPO_ROOT}"
 
 ./autogen.sh
+
+if [[ $? -gt 0 ]]
+then
+    echo "Failed autogen.sh"
+    exit 1
+fi
+
 make -j6 datarootdir=/usr/share datadir=/usr/share libdir=/usr/lib/x86_64-linux-gnu HELPER_PATH_PREFIX=/usr/lib/x86_64-linux-gnu
+
+if [[ $? -gt 0 ]]
+then
+    echo "Failed build"
+    exit 1
+fi
 
 #
 # BUILD DIR STRUCTURE
