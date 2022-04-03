@@ -58,9 +58,13 @@ cp "${REPO_ROOT}/wrapper/.libs/wrapper-2.0" "${PKG_LIB_PANEL_DIR}"
 # DEBIAN metadata
 #
 PKG_DEBIAN_DIR="${PKG_DIR}/DEBIAN"
+PKG_UPSTREAM_VERSION=`apt-cache show libxfce4panel-2.0-4 | grep Version | head -n 1 | cut -d " " -f 2`
 
 mkdir -p "${PKG_DEBIAN_DIR}"
 cp "${SCRIPTDIR}/control-libxfce4panel-2.0" "${PKG_DEBIAN_DIR}/control"
+
+sed -i "s/@@UPSTREAM_VERSION@@/${PKG_UPSTREAM_VERSION}/" "${PKG_DEBIAN_DIR}/control"
+sed -i "s/@@SYS_ARCH@@/${DEB_HOST_ARCH}/" "${PKG_DEBIAN_DIR}/control"
 
 #
 # PACKAGE NOW

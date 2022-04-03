@@ -1,6 +1,6 @@
 Package: xfce4-panel
-Version: 4.16.3-1
-Architecture: amd64
+Version: @@UPSTREAM_VERSION@@
+Architecture: @@SYS_ARCH@@
 Maintainer: Debian Xfce Maintainers <debian-xfce@lists.debian.org>
 Installed-Size: 3984
 Depends: exo-utils, libatk1.0-0 (>= 1.12.4), libc6 (>= 2.7), libcairo2 (>= 1.2.4), libdbusmenu-gtk3-4 (>= 0.4.2), libexo-2-0 (>= 0.11.0), libgarcon-1-0 (>= 0.3.0), libgarcon-gtk3-1-0 (>= 0.7.1), libgdk-pixbuf-2.0-0 (>= 2.25.2) | libgdk-pixbuf2.0-0, libglib2.0-0 (>= 2.41.1), libgtk-3-0 (>= 3.21.5), libpango-1.0-0 (>= 1.14.0), libpangocairo-1.0-0 (>= 1.14.0), libwnck-3-0 (>= 3.2.0), libx11-6, libxext6, libxfce4panel-2.0-4 (>= 4.15.2), libxfce4ui-2-0 (>= 4.15.8), libxfce4util7 (>= 4.15.6), libxfconf-0-3 (>= 4.13.2)

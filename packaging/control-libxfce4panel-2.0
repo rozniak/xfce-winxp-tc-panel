@@ -1,7 +1,7 @@
 Package: libxfce4panel-2.0-4
 Source: xfce4-panel
-Version: 4.16.3-1
-Architecture: amd64
+Version: @@UPSTREAM_VERSION@@
+Architecture: @@SYS_ARCH@@
 Maintainer: Debian Xfce Maintainers <debian-xfce@lists.debian.org>
 Installed-Size: 434
 Depends: libc6 (>= 2.4), libcairo2 (>= 1.2.4), libgdk-pixbuf-2.0-0 (>= 2.22.0) | libgdk-pixbuf2.0-0, libglib2.0-0 (>= 2.37.3), libgtk-3-0 (>= 3.21.5), libxfce4util7 (>= 4.15.6)

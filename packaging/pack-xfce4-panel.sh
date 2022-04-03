@@ -113,9 +113,13 @@ find "${REPO_ROOT}/plugins" -type f -iname "*.desktop" -exec cp '{}' "${PKG_PLUG
 # DEBIAN metadata
 #
 PKG_DEBIAN_DIR="${PKG_DIR}/DEBIAN"
+PKG_UPSTREAM_VERSION=`apt-cache show xfce4-panel | grep Version | head -n 1 | cut -d " " -f 2`
 
 mkdir -p "${PKG_DEBIAN_DIR}"
 cp "${SCRIPTDIR}/control-xfce4-panel" "${PKG_DEBIAN_DIR}/control"
+
+sed -i "s/@@UPSTREAM_VERSION@@/${PKG_UPSTREAM_VERSION}/" "${PKG_DEBIAN_DIR}/control"
+sed -i "s/@@SYS_ARCH@@/${DEB_HOST_ARCH}/" "${PKG_DEBIAN_DIR}/control"
 
 #
 # PACKAGE NOW
