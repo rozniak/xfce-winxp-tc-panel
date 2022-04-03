@@ -31,7 +31,6 @@
 
 
 static void     wrapper_plug_finalize         (GObject        *object);
-static void     wrapper_plug_background_reset (WrapperPlug    *plug);
 
 
 
@@ -63,7 +62,7 @@ G_DEFINE_TYPE (WrapperPlug, wrapper_plug, GTK_TYPE_PLUG)
 static void
 wrapper_plug_class_init (WrapperPlugClass *klass)
 {
-  GObjectClass   *gobject_class;
+  GObjectClass *gobject_class;
 
   gobject_class = G_OBJECT_CLASS (klass);
   gobject_class->finalize = wrapper_plug_finalize;
@@ -74,11 +73,11 @@ wrapper_plug_class_init (WrapperPlugClass *klass)
 static void
 wrapper_plug_init (WrapperPlug *plug)
 {
-  GdkVisual       *visual = NULL;
-  GdkScreen       *screen;
+  GdkVisual *visual = NULL;
+  GdkScreen *screen;
 
-  plug->style_context = gtk_widget_get_style_context (GTK_WIDGET (plug));
-  plug->style_provider = NULL;
+  plug->style_context  = gtk_widget_get_style_context (GTK_WIDGET (plug));
+  plug->style_provider = GTK_STYLE_PROVIDER (gtk_css_provider_new());
 
   gtk_widget_set_name (GTK_WIDGET (plug), "XfcePanelWindowWrapper");
 
@@ -93,6 +92,10 @@ wrapper_plug_init (WrapperPlug *plug)
   gtk_style_context_add_class (plug->style_context, "xfce4-panel");
 
   gtk_drag_dest_unset (GTK_WIDGET (plug));
+
+  /* add the style provider */
+  gtk_style_context_add_provider (plug->style_context, plug->style_provider,
+                                  GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
 }
 
 
@@ -100,21 +103,9 @@ wrapper_plug_init (WrapperPlug *plug)
 static void
 wrapper_plug_finalize (GObject *object)
 {
-  wrapper_plug_background_reset (WRAPPER_PLUG (object));
+  g_object_unref (WRAPPER_PLUG (object)->style_provider);
 
   G_OBJECT_CLASS (wrapper_plug_parent_class)->finalize (object);
-}
-
-
-
-static void
-wrapper_plug_background_reset (WrapperPlug *plug)
-{
-  panel_return_if_fail (WRAPPER_IS_PLUG (plug));
-
-  if (plug->style_provider != NULL)
-      gtk_style_context_remove_provider(plug->style_context, plug->style_provider);
-  plug->style_provider = NULL;
 }
 
 
@@ -152,40 +143,26 @@ void
 wrapper_plug_set_background_color (WrapperPlug *plug,
                                    const gchar *color_string)
 {
-  GdkRGBA color;
-  gchar*  css;
+  GdkRGBA  color;
+  gchar   *css;
 
   panel_return_if_fail (WRAPPER_IS_PLUG (plug));
 
-  wrapper_plug_background_reset (plug);
+  /* interpret NULL color as user requesting the system theme, so reset the css here */
+  if (color_string == NULL)
+    {
+      gtk_css_provider_load_from_data (GTK_CSS_PROVIDER (plug->style_provider), "", -1, NULL);
+      return;
+    }
 
-  if (color_string != NULL && gdk_rgba_parse (&color, color_string))
-  {
-      css = g_slice_alloc0 (255);
+  if (gdk_rgba_parse (&color, color_string))
+    {
+      css = g_strdup_printf ("* { background: %s; }", gdk_rgba_to_string(&color));
 
-      g_sprintf(
-          css,
-          "* { background: %s; }",
-          gdk_rgba_to_string(&color)
-      );
+      gtk_css_provider_load_from_data (GTK_CSS_PROVIDER (plug->style_provider), css, -1, NULL);
 
-      plug->style_provider = GTK_STYLE_PROVIDER (gtk_css_provider_new());
-
-      gtk_css_provider_load_from_data(
-          GTK_CSS_PROVIDER (plug->style_provider),
-          css,
-          -1,
-          NULL
-      );
-
-      gtk_style_context_add_provider(
-          plug->style_context,
-          plug->style_provider,
-          GTK_STYLE_PROVIDER_PRIORITY_APPLICATION
-      );
-
-      g_slice_free1 (255, css);
-  }
+      g_free (css);
+    }
 }
 
 
@@ -194,34 +171,13 @@ void
 wrapper_plug_set_background_image (WrapperPlug *plug,
                                    const gchar *image)
 {
-  gchar* css;
+  gchar *css;
 
   panel_return_if_fail (WRAPPER_IS_PLUG (plug));
 
-  wrapper_plug_background_reset (plug);
+  css = g_strdup_printf ("* { background: url('%s'); }", image);
 
-  css = g_slice_alloc0 (255);
+  gtk_css_provider_load_from_data (GTK_CSS_PROVIDER (plug->style_provider), css, -1, NULL);
 
-  g_sprintf(
-      css,
-      "* { background: url('%s'); }",
-      image
-  );
-
-  plug->style_provider = GTK_STYLE_PROVIDER (gtk_css_provider_new());
-
-  gtk_css_provider_load_from_data(
-      GTK_CSS_PROVIDER (plug->style_provider),
-      css,
-      -1,
-      NULL
-  );
-
-  gtk_style_context_add_provider(
-      plug->style_context,
-      plug->style_provider,
-      GTK_STYLE_PROVIDER_PRIORITY_APPLICATION
-  );
-
-  g_slice_free1 (255, css);
+  g_free (css);
 }
