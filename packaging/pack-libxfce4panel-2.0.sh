@@ -2,11 +2,15 @@
 
 L_SCRIPTDIR=`dirname "$0"`
 
+CORE_COUNT=`nproc`
 CURDIR=`realpath -s "./"`
 PKG_DIR=`realpath -s "./tmp-pkg"`
 SCRIPTDIR=`realpath -s "${L_SCRIPTDIR}"`
 
 REPO_ROOT=`realpath -s "${SCRIPTDIR}/.."`
+
+
+source /dev/stdin <<<"$(dpkg-architecture)"
 
 #
 # COMPILE
@@ -21,7 +25,7 @@ then
     exit 1
 fi
 
-make -j6 datarootdir=/usr/share datadir=/usr/share libdir=/usr/lib/x86_64-linux-gnu HELPER_PATH_PREFIX=/usr/lib/x86_64-linux-gnu
+make -j${CORE_COUNT} datarootdir=/usr/share datadir=/usr/share libdir=/usr/lib/${DEB_HOST_MULTIARCH} HELPER_PATH_PREFIX=/usr/lib/${DEB_HOST_MULTIARCH}
 
 if [[ $? -gt 0 ]]
 then
@@ -41,13 +45,13 @@ mkdir "${PKG_DIR}"
 
 # Binaries
 #
-PKG_LIB_DIR="${PKG_DIR}/usr/lib/x86_64-linux-gnu"
+PKG_LIB_DIR="${PKG_DIR}/usr/lib/${DEB_HOST_MULTIARCH}"
 PKG_LIB_PANEL_DIR="${PKG_LIB_DIR}/xfce4/panel"
 
 mkdir -p "${PKG_LIB_PANEL_DIR}"
 
 cp "${REPO_ROOT}/libxfce4panel/.libs/libxfce4panel-2.0.so.4.0.0" "${PKG_LIB_DIR}"
-ln -s "/usr/lib/x86_64-linux-gnu/libxfce4panel-2.0.so.4.0.0" "${PKG_LIB_DIR}/libxfce4panel-2.0.so.4"
+ln -s "/usr/lib/${DEB_HOST_MULTIARCH}/libxfce4panel-2.0.so.4.0.0" "${PKG_LIB_DIR}/libxfce4panel-2.0.so.4"
 cp "${REPO_ROOT}/wrapper/.libs/wrapper-2.0" "${PKG_LIB_PANEL_DIR}"
 
 #

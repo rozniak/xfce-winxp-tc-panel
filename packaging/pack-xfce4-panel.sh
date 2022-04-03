@@ -2,11 +2,15 @@
 
 L_SCRIPTDIR=`dirname "$0"`
 
+CORE_COUNT=`nproc`
 CURDIR=`realpath -s "./"`
 PKG_DIR=`realpath -s "./tmp-pkg"`
 SCRIPTDIR=`realpath -s "${L_SCRIPTDIR}"`
 
 REPO_ROOT=`realpath -s "${SCRIPTDIR}/.."`
+
+
+source /dev/stdin <<<"$(dpkg-architecture)"
 
 #
 # COMPILE
@@ -21,7 +25,7 @@ then
     exit 1
 fi
 
-make -j6 datarootdir=/usr/share datadir=/usr/share libdir=/usr/lib/x86_64-linux-gnu HELPER_PATH_PREFIX=/usr/lib/x86_64-linux-gnu
+make -j${CORE_COUNT} datarootdir=/usr/share datadir=/usr/share libdir=/usr/lib/${DEB_HOST_MULTIARCH} HELPER_PATH_PREFIX=/usr/lib/${DEB_HOST_MULTIARCH}
 
 if [[ $? -gt 0 ]]
 then
@@ -58,7 +62,7 @@ cp "${REPO_ROOT}/plugins/windowmenu/xfce4-popup-windowmenu" "${PKG_BIN_DIR}"
 
 # /usr/lib stuff (mostly panel plugins)
 #
-PKG_LIB_DIR="${PKG_DIR}/usr/lib/x86_64-linux-gnu/xfce4/panel"
+PKG_LIB_DIR="${PKG_DIR}/usr/lib/${DEB_HOST_MULTIARCH}/xfce4/panel"
 PKG_LIB_PLUGINS_DIR="${PKG_LIB_DIR}/plugins"
 
 mkdir -p "${PKG_LIB_PLUGINS_DIR}"
